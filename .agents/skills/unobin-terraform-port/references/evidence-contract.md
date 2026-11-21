@@ -24,5 +24,7 @@ Include every `IMPLEMENT` and `VERIFY` ID from the current spec. Both implementa
 test evidence are required. For an obligation fulfilled entirely by an existing target helper,
 name that helper and its existing or newly added behavior test.
 
+Identify the construct entry file using the category convention in `../SKILL.md`.
+
 If work cannot complete, return `SPEC_GAP` or `BLOCKED` followed by the exact missing decision,
 source, tool, or dependency. Do not invent a COMPLETE artifact.

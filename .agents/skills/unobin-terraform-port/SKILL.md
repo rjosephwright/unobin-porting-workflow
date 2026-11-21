@@ -191,6 +191,12 @@ Do not include provider excerpts or the provider snapshot path. The separately s
 permission profile must deny the snapshot and every other provider source copy. The porter must
 derive target APIs, naming, and test conventions from the target repository and its dependencies.
 
+For Go Unobin libraries, name construct entry files by category: `*_rsrc.go` for
+resources, `*_dsrc.go` for data sources, and `*_action.go` for actions. Matching
+tests use `*_rsrc_test.go`, `*_dsrc_test.go`, and `*_action_test.go`. Helper files
+keep descriptive filenames. Include the exact entry filename in the spec's
+target mapping and verify it during implementation and audit.
+
 Save a complete porter response to `<artifact_root>/evidence/<key>.md`. Calculate the worktree diff
 hash, validate the evidence against the current spec, and record it:
 

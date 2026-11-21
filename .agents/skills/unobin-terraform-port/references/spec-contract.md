@@ -27,6 +27,8 @@ One concise paragraph naming the source construct and target registration.
 ## Target mapping
 
 - Target service/library, registration name, implementation location, and category type.
+- Exact construct entry filename, using the Go category suffixes in `../SKILL.md`
+  when the target is Go.
 
 ## Lifecycle and invocation
 

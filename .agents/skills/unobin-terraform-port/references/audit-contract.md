@@ -22,6 +22,7 @@ Round: <positive-integer>
 ## Coverage
 
 - Provider source, target implementation, helpers, and tests inspected.
+- Construct entry filename follows the category convention in `../SKILL.md`.
 
 ## Remaining delta
 
