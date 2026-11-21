@@ -1,0 +1,237 @@
+#!/usr/bin/env python3
+
+from __future__ import annotations
+
+import re
+import sys
+from pathlib import Path
+
+
+class InvalidArtifact(ValueError):
+    pass
+
+
+def read_artifact(path: Path) -> str:
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError as error:
+        raise InvalidArtifact(f"artifact cannot be read: {path}: {error}") from error
+    if not text.strip():
+        raise InvalidArtifact(f"artifact is empty: {path}")
+    return text
+
+
+def field(text: str, name: str) -> str:
+    match = re.search(rf"^{re.escape(name)}:[ \t]*(.+?)[ \t]*$", text, re.MULTILINE)
+    if not match:
+        raise InvalidArtifact(f"missing field: {name}")
+    return match.group(1)
+
+
+def require_title(text: str, title: str) -> None:
+    if not text.startswith(title):
+        raise InvalidArtifact(f"artifact title must start with: {title}")
+
+
+def section(text: str, heading: str) -> str:
+    match = re.search(
+        rf"^{re.escape(heading)}[ \t]*\n(.*?)(?=^## |\Z)",
+        text,
+        re.MULTILINE | re.DOTALL,
+    )
+    if not match:
+        raise InvalidArtifact(f"missing required heading: {heading}")
+    body = match.group(1).strip()
+    if not body:
+        raise InvalidArtifact(f"empty required section: {heading}")
+    return body
+
+
+def bullet_field(body: str, name: str) -> str:
+    match = re.search(
+        rf"^-[ \t]+{re.escape(name)}:[ \t]*(.+?)[ \t]*$",
+        body,
+        re.MULTILINE,
+    )
+    if not match:
+        raise InvalidArtifact(f"missing bullet field: {name}")
+    return match.group(1)
+
+
+def rows(body: str, header: tuple[str, ...]) -> list[tuple[str, ...]]:
+    parsed: list[tuple[str, ...]] = []
+    header_found = False
+    for line in body.splitlines():
+        if not line.strip().startswith("|"):
+            continue
+        cells = tuple(cell.strip() for cell in line.strip().strip("|").split("|"))
+        if cells == header:
+            header_found = True
+            continue
+        if cells and all(re.fullmatch(r":?-{3,}:?", cell) for cell in cells):
+            continue
+        parsed.append(cells)
+    if not header_found:
+        raise InvalidArtifact(f"table has no required header: {' | '.join(header)}")
+    if not parsed:
+        raise InvalidArtifact(f"table has no records: {' | '.join(header)}")
+    for record in parsed:
+        if len(record) != len(header):
+            raise InvalidArtifact(f"table record has {len(record)} cells; expected {len(header)}")
+    return parsed
+
+
+SPEC_SECTIONS = (
+    "## Summary",
+    "## Sources",
+    "## Target precedents",
+    "## Target mapping",
+    "## Lifecycle and invocation",
+    "## Edge cases",
+    "## Schema and operations",
+    "## Exclusions",
+    "## Coverage",
+    "## Open questions",
+)
+EDGE_HEADER = ("ID", "Disposition", "Behavior", "Evidence", "Acceptance")
+
+
+def validate_spec(path: Path) -> None:
+    text = read_artifact(path)
+    require_title(text, "# Terraform construct spec: `")
+    status = field(text, "Status")
+    if status not in {"READY", "BLOCKED"}:
+        raise InvalidArtifact(f"invalid spec status: {status}")
+    category = field(text, "Category")
+    if category not in {"resource", "data-source", "action"}:
+        raise InvalidArtifact(f"invalid construct category: {category}")
+    field(text, "Provider revision")
+    bodies = {heading: section(text, heading) for heading in SPEC_SECTIONS}
+    precedents = bodies["## Target precedents"]
+    bullet_field(precedents, "Runtime")
+    bullet_field(precedents, "Sibling")
+    edge_rows = rows(bodies["## Edge cases"], EDGE_HEADER)
+    seen: set[str] = set()
+    for identifier, disposition, behavior, evidence, acceptance in edge_rows:
+        if not re.fullmatch(r"E[0-9]{3,}", identifier):
+            raise InvalidArtifact(f"invalid edge-case ID: {identifier}")
+        if identifier in seen:
+            raise InvalidArtifact(f"duplicate edge-case ID: {identifier}")
+        if disposition not in {"IMPLEMENT", "EXCLUDE", "VERIFY", "UNRESOLVED"}:
+            raise InvalidArtifact(f"invalid disposition for {identifier}: {disposition}")
+        if not all((behavior, evidence, acceptance)):
+            raise InvalidArtifact(f"incomplete edge-case record: {identifier}")
+        seen.add(identifier)
+    if status == "READY" and any(record[1] == "UNRESOLVED" for record in edge_rows):
+        raise InvalidArtifact("READY spec contains an UNRESOLVED item")
+    if status == "BLOCKED":
+        if not any(record[1] == "UNRESOLVED" for record in edge_rows):
+            raise InvalidArtifact("BLOCKED spec contains no UNRESOLVED item")
+        open_questions = bodies["## Open questions"]
+        bullet_field(open_questions, "Question")
+        blocker_type = bullet_field(open_questions, "Blocker type")
+        if blocker_type not in {"REQUIRED_INPUT", "SOURCE_GAP", "USER_DECISION"}:
+            raise InvalidArtifact(f"invalid blocker type: {blocker_type}")
+        bullet_field(open_questions, "Required authority")
+        bullet_field(open_questions, "Target alternatives")
+        bullet_field(open_questions, "Recommended mapping")
+
+
+AUDIT_SECTIONS = (
+    "## Findings",
+    "## Confirmed behavior",
+    "## Coverage",
+    "## Remaining delta",
+)
+FINDING_HEADER = ("ID", "Route", "Severity", "Problem", "Evidence", "Required change")
+
+
+def validate_audit(path: Path) -> None:
+    text = read_artifact(path)
+    require_title(text, "# Terraform construct audit: `")
+    status = field(text, "Status")
+    if status not in {"PASS", "FAIL", "BLOCKED"}:
+        raise InvalidArtifact(f"invalid audit status: {status}")
+    field(text, "Diff")
+    round_text = field(text, "Round")
+    if not round_text.isdigit() or int(round_text) < 1:
+        raise InvalidArtifact(f"invalid audit round: {round_text}")
+    bodies = {heading: section(text, heading) for heading in AUDIT_SECTIONS}
+    if status == "PASS" and bodies["## Findings"] != "- None.":
+        raise InvalidArtifact("PASS audit contains findings")
+    if status == "FAIL":
+        finding_rows = rows(bodies["## Findings"], FINDING_HEADER)
+        for identifier, route, _severity, problem, evidence, required_change in finding_rows:
+            if not re.fullmatch(r"A[0-9]{3,}", identifier):
+                raise InvalidArtifact(f"invalid audit finding ID: {identifier}")
+            if route not in {"SPEC_GAP", "PORT_GAP"}:
+                raise InvalidArtifact(f"invalid route for {identifier}: {route}")
+            if not all((problem, evidence, required_change)):
+                raise InvalidArtifact(f"incomplete audit finding: {identifier}")
+    remaining = bodies["## Remaining delta"]
+    if status == "PASS" and remaining != "- None.":
+        raise InvalidArtifact("PASS audit has a remaining delta")
+    if status in {"FAIL", "BLOCKED"} and remaining == "- None.":
+        raise InvalidArtifact(f"{status} audit has no remaining delta")
+
+
+EVIDENCE_SECTIONS = ("## Obligations", "## Checks")
+EVIDENCE_HEADER = ("ID", "Implementation", "Tests")
+
+
+def validate_evidence(path: Path, spec_path: Path) -> None:
+    text = read_artifact(path)
+    require_title(text, "# Terraform construct evidence: `")
+    status = field(text, "Status")
+    if status != "COMPLETE":
+        raise InvalidArtifact(f"invalid evidence status: {status}")
+    field(text, "Diff")
+    field(text, "Spec")
+    bodies = {heading: section(text, heading) for heading in EVIDENCE_SECTIONS}
+    evidence_rows = rows(bodies["## Obligations"], EVIDENCE_HEADER)
+    evidence: dict[str, tuple[str, str]] = {}
+    for identifier, implementation, tests in evidence_rows:
+        if identifier in evidence:
+            raise InvalidArtifact(f"duplicate evidence ID: {identifier}")
+        evidence[identifier] = (implementation, tests)
+
+    spec_text = read_artifact(spec_path)
+    edge_rows = rows(section(spec_text, "## Edge cases"), EDGE_HEADER)
+    required = {record[0] for record in edge_rows if record[1] in {"IMPLEMENT", "VERIFY"}}
+    for identifier in sorted(required):
+        if identifier not in evidence:
+            raise InvalidArtifact(f"missing implementation evidence: {identifier}")
+        implementation, tests = evidence[identifier]
+        if implementation in {"", "-", "None"} or tests in {"", "-", "None"}:
+            raise InvalidArtifact(f"incomplete implementation evidence: {identifier}")
+
+
+def usage() -> InvalidArtifact:
+    return InvalidArtifact(
+        "usage: validate-artifact <spec|audit> <path> OR "
+        "validate-artifact evidence <path> <spec-path>"
+    )
+
+
+def main(argv: list[str]) -> int:
+    try:
+        if len(argv) < 3:
+            raise usage()
+        kind = argv[1]
+        path = Path(argv[2])
+        if kind == "spec" and len(argv) == 3:
+            validate_spec(path)
+        elif kind == "audit" and len(argv) == 3:
+            validate_audit(path)
+        elif kind == "evidence" and len(argv) == 4:
+            validate_evidence(path, Path(argv[3]))
+        else:
+            raise usage()
+        return 0
+    except InvalidArtifact as error:
+        print(f"validate-artifact: {error}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv))

@@ -1,0 +1,30 @@
+# Go target example. Set skills and commands to match the destination library.
+
+version = 2
+provider_source_env = "UNOBIN_TERRAFORM_PROVIDER_SOURCE"
+source_revision = "@SOURCE_REVISION@"
+runtime_root = "@RUNTIME_ROOT@"
+max_porters = 3
+implementation_skills = ["programmer", "go-programmer"]
+required_checks = ["full-test", "full-vet", "integration"]
+
+[environment]
+GOPATH = "@TARGET_ROOT@/_output/go"
+GOMODCACHE = "@TARGET_ROOT@/_output/go/pkg/mod"
+GOCACHE = "@TARGET_ROOT@/_output/gocache"
+GOPROXY = "off"
+
+[analysis_environment]
+GOPATH = "@RUNTIME_ROOT@/cache/@TARGET_SLUG@/analysis/go"
+GOMODCACHE = "@RUNTIME_ROOT@/cache/@TARGET_SLUG@/analysis/go/pkg/mod"
+GOCACHE = "@RUNTIME_ROOT@/cache/@TARGET_SLUG@/analysis/gocache"
+
+[commands]
+focused-test = "@GO_ENV@ GOPROXY=off go test {affected_packages}"
+focused-vet = "@GO_ENV@ GOPROXY=off go vet {affected_packages}"
+format = "gofmt -w {changed_go_files}"
+diff-check = "git diff --check"
+full-test = "@GO_ENV@ GOPROXY=off make test"
+full-vet = "@GO_ENV@ GOPROXY=off go vet ./..."
+lint = "@GO_ENV@ GOPROXY=off make lint"
+integration = "@GO_ENV@ GOPROXY=off SCENARIO={scenario} make test-integration"

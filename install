@@ -1,0 +1,164 @@
+#!/usr/bin/env python3
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import shlex
+import shutil
+import sys
+import tempfile
+import tomllib
+from pathlib import Path
+
+
+def find_codex_runtime() -> Path:
+    executable = shutil.which("codex")
+    if executable is None:
+        raise ValueError("codex is not on PATH; set --codex-runtime")
+    executable = Path(executable).resolve()
+    for directory in executable.parents:
+        package = directory / "package.json"
+        if package.is_file():
+            try:
+                metadata = json.loads(package.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                continue
+            if isinstance(metadata, dict) and metadata.get("name") == "@openai/codex":
+                return directory
+    return executable.parent
+
+
+def render(path: Path, values: dict[str, str]) -> bytes:
+    def replace(match: re.Match[str]) -> str:
+        name = match.group(1)
+        if name not in values:
+            raise ValueError(f"unknown template marker: {name}")
+        return json.dumps(values[name], ensure_ascii=False)[1:-1]
+
+    text = re.sub(r"@([A-Z_]+)@", replace, path.read_text(encoding="utf-8"))
+    tomllib.loads(text)
+    return text.encode("utf-8")
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(
+        description="Install the Unobin porting workflow in a repository."
+    )
+    parser.add_argument("repo", type=Path, help="existing destination repository directory")
+    parser.add_argument(
+        "--provider-source", type=Path, required=True, help="Terraform provider checkout"
+    )
+    parser.add_argument(
+        "--unobin-root", type=Path, required=True, help="Unobin runtime source directory"
+    )
+    parser.add_argument(
+        "--skills-root", type=Path, required=True, help="implementation skills directory"
+    )
+    parser.add_argument(
+        "--codex-runtime", type=Path,
+        help="Codex runtime directory (default: discover from codex on PATH)",
+    )
+    parser.add_argument(
+        "--runtime-root", type=Path, default=Path("_output/terraform-port-runtime"),
+        help="runtime directory, relative to the destination by default",
+    )
+    parser.add_argument(
+        "--source-revision", default="HEAD", help="provider revision (default: HEAD)"
+    )
+    parser.add_argument(
+        "--overwrite", action="store_true",
+        help="replace differing workflow files and both .codex files; does not merge TOML",
+    )
+    args = parser.parse_args()
+    package = Path(__file__).resolve().parent
+
+    try:
+        paths = {
+            "TARGET_ROOT": args.repo,
+            "PROVIDER_CHECKOUT": args.provider_source,
+            "UNOBIN_ROOT": args.unobin_root,
+            "SKILLS_ROOT": args.skills_root,
+            "CODEX_RUNTIME": args.codex_runtime or find_codex_runtime(),
+        }
+        paths = {name: path.expanduser().resolve() for name, path in paths.items()}
+        for name, path in paths.items():
+            if not path.is_dir():
+                raise ValueError(f"{name} must be an existing directory: {path}")
+        repo = paths["TARGET_ROOT"]
+        if repo == package or repo.is_relative_to(package / ".agents"):
+            raise ValueError("destination must be separate from the workflow package")
+        runtime = args.runtime_root.expanduser()
+        runtime = (runtime if runtime.is_absolute() else repo / runtime).resolve()
+        system_temp = Path(tempfile.gettempdir()).resolve()
+        for path in (paths["PROVIDER_CHECKOUT"], runtime):
+            if path.is_relative_to(system_temp):
+                raise ValueError(
+                    f"provider and runtime directories must be outside {system_temp}: {path}"
+                )
+        slug = re.sub(r"[^A-Za-z0-9._-]+", "-", repo.name).strip("-.")
+        if not slug or not args.source_revision.strip():
+            raise ValueError("destination name and source revision must not be empty")
+        values = {name: str(path) for name, path in paths.items()}
+        values.update(
+            RUNTIME_ROOT=str(runtime), TARGET_SLUG=slug, SOURCE_REVISION=args.source_revision
+        )
+        go_environment = {
+            "GOPATH": repo / "_output" / "go",
+            "GOMODCACHE": repo / "_output" / "go" / "pkg" / "mod",
+            "GOCACHE": repo / "_output" / "gocache",
+        }
+        values["GO_ENV"] = " ".join(
+            f"{name}={shlex.quote(str(path))}" for name, path in go_environment.items()
+        )
+        files: dict[Path, tuple[bytes, int]] = {}
+        for source in sorted((package / ".agents").rglob("*")):
+            if source.is_file() and "__pycache__" not in source.parts:
+                if source.suffix not in {".pyc", ".pyo"}:
+                    files[repo / source.relative_to(package)] = (
+                        source.read_bytes(), source.stat().st_mode & 0o777
+                    )
+        for name in ("config.toml", "terraform-port.toml"):
+            content = render(package / "templates" / f"{name}.example", values)
+            files[repo / ".codex" / name] = (content, 0o644)
+
+        conflicts = []
+        for destination, (content, _) in files.items():
+            current = destination
+            while current != repo:
+                if current.is_symlink():
+                    raise ValueError(f"installation path is a symbolic link: {current}")
+                if current != destination and current.exists() and not current.is_dir():
+                    raise ValueError(f"installation parent is not a directory: {current}")
+                current = current.parent
+            if destination.exists():
+                if not destination.is_file():
+                    raise ValueError(f"installation path is not a file: {destination}")
+                if destination.read_bytes() != content:
+                    conflicts.append(str(destination.relative_to(repo)))
+        if conflicts and not args.overwrite:
+            raise ValueError(
+                "existing files differ; review them before using --overwrite: "
+                + ", ".join(conflicts)
+            )
+
+        for destination, (content, mode) in files.items():
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            if not destination.exists() or destination.read_bytes() != content:
+                destination.write_bytes(content)
+            destination.chmod(mode)
+        for path in go_environment.values():
+            path.mkdir(parents=True, exist_ok=True)
+    except (OSError, ValueError) as error:
+        print(f"install: {error}", file=sys.stderr)
+        return 1
+
+    print(f"Installed workflow in {repo}")
+    print("Set the provider source before running the workflow:")
+    print(f"export UNOBIN_TERRAFORM_PROVIDER_SOURCE={shlex.quote(str(paths['PROVIDER_CHECKOUT']))}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

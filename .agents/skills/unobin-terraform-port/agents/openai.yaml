@@ -1,0 +1,4 @@
+interface:
+  display_name: "Unobin Terraform Port"
+  short_description: "Port Terraform provider constructs in parallel"
+  default_prompt: "Use $unobin-terraform-port to port queued Terraform constructs into this Unobin library."

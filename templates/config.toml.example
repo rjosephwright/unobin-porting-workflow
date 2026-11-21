@@ -1,0 +1,66 @@
+# Host permission profiles and agent registrations.
+
+[agents."unobin-terraform-investigator"]
+description = "Investigate one construct from a pinned Terraform provider snapshot."
+config_file = "../.agents/agents/unobin-terraform-investigator.toml"
+
+[agents."unobin-terraform-porter"]
+description = "Implement one construct specification in an isolated target worktree."
+config_file = "../.agents/agents/unobin-terraform-porter.toml"
+
+[agents."unobin-terraform-auditor"]
+description = "Audit one implementation against provider source and its specification."
+config_file = "../.agents/agents/unobin-terraform-auditor.toml"
+
+[permissions."unobin-terraform-analysis"]
+description = "Read provider snapshots and target code; write analysis scratch files."
+
+[permissions."unobin-terraform-analysis".filesystem]
+":root" = "deny"
+":minimal" = "read"
+":tmpdir" = "write"
+":slash_tmp" = "read"
+"@CODEX_RUNTIME@" = "read"
+"@SKILLS_ROOT@" = "read"
+"@UNOBIN_ROOT@" = "read"
+"@TARGET_ROOT@/_output/go" = "read"
+"@PROVIDER_CHECKOUT@" = "read"
+"@RUNTIME_ROOT@/provider-sources" = "read"
+"@RUNTIME_ROOT@/worktrees/@TARGET_SLUG@" = "read"
+"@RUNTIME_ROOT@/cache/@TARGET_SLUG@/analysis" = "write"
+
+[permissions."unobin-terraform-analysis".filesystem."@TARGET_ROOT@"]
+"." = "read"
+"**/.env" = "deny"
+"**/secrets" = "deny"
+
+[permissions."unobin-terraform-analysis".network]
+enabled = false
+
+[permissions."unobin-terraform-port"]
+description = "Implement in target worktrees without reading Terraform provider source."
+
+[permissions."unobin-terraform-port".filesystem]
+":root" = "deny"
+":minimal" = "read"
+":tmpdir" = "write"
+":slash_tmp" = "read"
+"@CODEX_RUNTIME@" = "read"
+"@SKILLS_ROOT@" = "read"
+"@UNOBIN_ROOT@" = "read"
+"@TARGET_ROOT@/_output/go" = "write"
+"@TARGET_ROOT@/_output/gocache" = "write"
+"@TARGET_ROOT@/_output/go/pkg/mod/**/terraform-provider-*" = "deny"
+"@PROVIDER_CHECKOUT@" = "deny"
+"@RUNTIME_ROOT@/provider-sources" = "deny"
+"@RUNTIME_ROOT@/cache/@TARGET_SLUG@/analysis" = "deny"
+"@RUNTIME_ROOT@/cache/@TARGET_SLUG@/porter" = "write"
+"@RUNTIME_ROOT@/worktrees/@TARGET_SLUG@" = "write"
+
+[permissions."unobin-terraform-port".filesystem."@TARGET_ROOT@"]
+"." = "read"
+"**/.env" = "deny"
+"**/secrets" = "deny"
+
+[permissions."unobin-terraform-port".network]
+enabled = false
