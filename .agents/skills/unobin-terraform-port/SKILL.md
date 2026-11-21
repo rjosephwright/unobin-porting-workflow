@@ -39,6 +39,15 @@ Read these files before dispatching work:
 - `references/spec-contract.md`
 - `references/evidence-contract.md`
 - `references/audit-contract.md`
+- `references/input-constraints.md`
+
+## Native input contract
+
+Follow [input-constraints.md](references/input-constraints.md) during investigation, implementation,
+and audit. Declare input rules once through native constraints in the construct entry file. Do not
+substitute validate() callbacks or validation-driven equality for native enforcement. Verify
+compiled literals, evaluated inputs, unchanged plans, and deferred/saved-plan apply. Resolve exact
+SDK gaps separately before declaring the affected construct complete.
 
 ## Initialize the run
 

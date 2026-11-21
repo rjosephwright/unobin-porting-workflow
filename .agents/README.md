@@ -34,6 +34,15 @@ implementation guidance, working validation commands, and an accessible provider
 unavailable integration environment must not count as a passing check. Configure the validation
 commands for each target before starting resource ports.
 
+## Native input constraints
+
+Investigator, porter, and auditor follow
+[the native input contract](skills/unobin-terraform-port/references/input-constraints.md).
+Input rules belong to native constraints in each construct entry file, without duplicate validation
+callbacks. Specs identify rule coverage and SDK gaps; compiled fixtures and plan/apply tests prove
+known, pending, unchanged and saved-plan enforcement. The target's `.agents/library-porting.md`
+contains provider-specific decisions, including required Kubernetes desired identity.
+
 ## Permission isolation
 
 Codex 0.169.0 applies a limited set of custom-role overrides. Approval and filesystem permissions

@@ -10,6 +10,13 @@ Never create a repository, linked worktree, provider snapshot, or cache under th
 directory. Use the cache environment configured by the manifest for dependencies and builds,
 and the durable cache directory in the task for other scratch data.
 
+Read `.agents/skills/unobin-terraform-port/references/input-constraints.md` and apply its
+single-definition native input contract. Go Constraints() declarations belong in the construct
+entry file, never separate constraints files. Do not add duplicate validate() callbacks. Verify
+literal/evaluated inputs, otherwise-NoOp plans, deferred inputs and saved-plan apply through native
+checks. Report precise SDK expression/enforcement gaps for a separate owning-layer correction;
+do not hide them with resource-specific validation or mark the affected obligation complete.
+
 Read these files before editing:
 
 1. The target repository AGENTS.md files that govern the assigned paths.

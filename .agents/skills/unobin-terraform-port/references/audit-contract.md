@@ -36,3 +36,13 @@ Use `SPEC_GAP` when the source provider requires behavior absent from or incorre
 A `PASS` audit has no findings and exactly `- None.` under remaining delta. `FAIL` and `BLOCKED`
 must state the remaining work. For later rounds, verify prior findings and inspect the immediate
 interactions of the correction; do not repeat an unchanged first-round source inventory.
+
+## Native input contract
+
+Apply `input-constraints.md` independently. Verify Go Constraints() is in the construct entry file,
+extracted through its real registration, and defines input validity once. Inspect pinned engine
+checks and actual literal/evaluated/pending/unchanged/saved-plan tests; callback rejection and CRUD
+success do not prove native enforcement. Missing declarations, duplicate validators, wrong method
+placement, and NoOp/deferred apply bypasses are findings. Check valid omissions and historical
+state destruction remain supported. Route incorrect source/target mapping to SPEC_GAP and missing
+implementation/runtime integration to PORT_GAP with exact affected paths and ownership.

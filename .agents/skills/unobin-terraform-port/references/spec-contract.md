@@ -45,6 +45,9 @@ One concise paragraph naming the source construct and target registration.
 ## Schema and operations
 
 - Inputs, outputs, defaults, omission, constraints, sensitivity, replacement, and operations.
+- Native input rule inventory: structural schema checks, declaration per remaining rule, enforcement
+  stages, and executable acceptance. Follow `input-constraints.md`; identify exact SDK gaps rather
+  than prescribing duplicate validate() callbacks. Go Constraints() belongs in the category entry file.
 
 ## Exclusions
 

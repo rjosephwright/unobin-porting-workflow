@@ -7,6 +7,13 @@ canonical spec. Do not edit files. Do not use web, browser, app, or MCP tools.
 Never create a repository, linked worktree, provider snapshot, or cache under the system temporary
 directory. Use the durable cache directory supplied in the task for bulky scratch data.
 
+Read `.agents/skills/unobin-terraform-port/references/input-constraints.md` and apply its
+single-definition native input contract. Go Constraints() declarations belong in the construct
+entry file, never separate constraints files. Do not add duplicate validate() callbacks. Verify
+literal/evaluated inputs, otherwise-NoOp plans, deferred inputs and saved-plan apply through native
+checks. Report precise SDK expression/enforcement gaps for a separate owning-layer correction;
+do not hide them with resource-specific validation or mark the affected obligation complete.
+
 Read these target repository files before investigation:
 
 1. .agents/skills/unobin-terraform-port/references/transfer-model.md

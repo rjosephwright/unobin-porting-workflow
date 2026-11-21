@@ -79,6 +79,15 @@ Before proposing a target-runtime change, document:
 Do not prescribe a runtime change in a canonical spec. When the choice needs user authority, record
 the alternatives and recommendation under `Open questions`.
 
+## Native input validity
+
+Apply `input-constraints.md` before choosing a validation mapping. Structural required fields and
+native constraint declarations define input validity. Preserve genuine optional/computed values,
+but do not copy Terraform computed-input omission when an explicit target requirement forbids it.
+A sibling's validate() callback is not an accepted native-validation precedent. Inspect compiler,
+plan, and saved/deferred apply enforcement. Coordinate exact SDK gaps separately; do not hide a
+missing rule or engine check in construct callbacks or equality functions.
+
 ## Evidence rules
 
 Read complete behavior-affecting functions and only the helpers needed to understand their
