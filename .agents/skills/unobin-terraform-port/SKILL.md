@@ -48,6 +48,7 @@ and audit. Declare input rules once through native constraints in the construct 
 substitute validate() callbacks or validation-driven equality for native enforcement. Verify
 compiled literals, evaluated inputs, unchanged plans, and deferred/saved-plan apply. Resolve exact
 SDK gaps separately before declaring the affected construct complete.
+Always use `unobin fmt --wrap-strings` on target `.ub` files before completion.
 
 ## Initialize the run
 

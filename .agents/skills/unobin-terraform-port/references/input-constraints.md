@@ -27,6 +27,13 @@ extraction through production library registration. Methods on nested helper typ
 Go helper calls are not automatically extracted; use the pinned SDK's supported declaration syntax.
 Preserve schema discovery when composing registrations.
 
+Keep Go lines at or below 100 characters, including nested constraint declarations. Use readable
+multiline call chains and inline ForEach bodies; do not generate dense single-line blocks. Do not
+reflow calls already within the limit. Break long lines at commas, operators, or nested expression
+boundaries with one continuation tab. Run
+gofmt and inspect changed Go line lengths before returning an implementation. Formatting alone
+does not wrap long Go calls. Auditors must flag added lines that exceed the target limit.
+
 Keep shared SDK and lifecycle corrections separate from resource commits. Refresh dependent
 worktrees onto the corrected dependency before final validation. Do not edit module-cache copies,
 bypass missing checks, or add machine-specific dependency replacements to a release.
@@ -34,6 +41,19 @@ bypass missing checks, or add machine-specific dependency replacements to a rele
 ## Executable proof
 
 Use package-local `testdata/ub/` fixtures, never inline Unobin in Go tests or tests of instruction text.
+
+Always run `unobin fmt --wrap-strings` on all target-owned `.ub` files, including fixtures and
+integration factories/configurations. Use the installed or target-built Unobin formatter, rather
+than manual formatting. Porters use `--write`; auditors use `--list` and require empty output.
+Repository-wide formatting changes must be a separate commit from constraints or other behavior
+changes. Format new/changed fixtures normally, but keep unrelated formatting sweeps out of feature
+commits. Separate mixed fixture formatting from semantic edits before staging.
+Inspect the result before tests and completion. Preserve deliberate
+syntax-error fixtures when the formatter rejects them and report the exact exception.
+
+Put tests in the target's existing suite by behavior. Reuse its compile-test package and fixture
+layout for compiler checks; do not invent a separate constraints-test suite. Keep runtime/lifecycle
+tests with their existing resource or integration tests. Reuse the target test helpers.
 
 - Compile actual valid/invalid literals through public registration and check evaluated inputs.
 - Identify the enforcing command; configuration-only `validate` may not evaluate resource arguments.
