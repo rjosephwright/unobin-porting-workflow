@@ -308,3 +308,9 @@ then record the target commit:
 Use the `git-commit` skill for commit operations. Preserve unrelated target changes and never add
 ledger artifacts, provider snapshots, caches, or protected credentials to a commit. If the user
 asked for an uncommitted result, stop after `validated` and report that explicitly.
+
+An autostash refresh can restore tracked modifications outside the index. Stage the intended paths
+again after the final refresh, including intended deletions, before hashing and validation. Require
+an empty unstaged diff before committing, and make command failures stop the operation rather than
+continuing into the commit. Verify that the committed patch matches the audited and tested
+candidate before integration. Pass the concrete full commit SHA to the controller, never `HEAD`.
