@@ -84,9 +84,9 @@ the alternatives and recommendation under `Open questions`.
 Apply `input-constraints.md` before choosing a validation mapping. Structural required fields and
 native constraint declarations define input validity. Preserve genuine optional/computed values,
 but do not copy Terraform computed-input omission when an explicit target requirement forbids it.
-A sibling's validate() callback is not an accepted native-validation precedent. Inspect compiler,
-plan, and saved/deferred apply enforcement. Coordinate exact SDK gaps separately; do not hide a
-missing rule or engine check in construct callbacks or equality functions.
+Inspect compiler, plan, and saved/deferred apply enforcement. Keep native predicates in their
+declarations and map provider-specific parsing to the target's request preparation. Coordinate
+exact SDK enforcement gaps separately.
 
 ## Evidence rules
 

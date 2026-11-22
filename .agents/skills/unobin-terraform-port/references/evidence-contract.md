@@ -31,9 +31,9 @@ source, tool, or dependency. Do not invent a COMPLETE artifact.
 
 ## Native input contract
 
-Follow `input-constraints.md`. Identify the Constraints() declaration in the construct entry file
-and tests proving public-registration extraction, invalid literal/evaluated inputs, unchanged Plan,
-and invalid resolved deferred/saved NoOp apply before side effects. Distinguish commands that
-actually enforce node constraints from configuration-only validation. Input validity must not be
-duplicated in validate() methods, ResourceDefinition.Validate, or equality/replacement predicates.
-Name exact SDK gaps and remaining work; do not return COMPLETE while a required rule is unsupported.
+Follow `input-constraints.md`. Identify native declarations and tests proving public registration
+and enforcement for literal, evaluated, unchanged, and resolved deferred or saved-plan inputs.
+Identify any domain parser used in request preparation and the test that proves conversion fails
+before side effects. Distinguish enforcement from configuration-only validation. Define native
+predicates once. Report exact SDK enforcement gaps and any required behavior that remains unproven.
+Return COMPLETE only when all required behavior is proven.

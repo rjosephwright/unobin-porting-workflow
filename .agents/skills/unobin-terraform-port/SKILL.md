@@ -45,10 +45,12 @@ Read these files before dispatching work:
 ## Native input contract
 
 Follow [input-constraints.md](references/input-constraints.md) during investigation, implementation,
-and audit. Declare input rules once through native constraints in the construct entry file. Do not
+and audit. Declare supported rules once through native constraints in the construct entry file. Do not
 substitute validate() callbacks or validation-driven equality for native enforcement. Verify
 compiled literals, evaluated inputs, unchanged plans, and deferred/saved-plan apply. Resolve exact
-SDK gaps separately before declaring the affected construct complete.
+engine enforcement bugs separately before declaring the affected checks complete. Domain-specific
+parsers can remain in a single request-conversion path with existing preflight hooks; do not make
+exact native equivalents of every provider validator a prerequisite for porting.
 Always use `unobin fmt --wrap-strings` on target `.ub` files before completion.
 
 ## Initialize the run

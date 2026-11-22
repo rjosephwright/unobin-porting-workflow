@@ -16,6 +16,12 @@ literal/evaluated inputs, otherwise-NoOp plans, deferred inputs and saved-plan a
 checks. Report precise SDK expression/enforcement gaps for a separate owning-layer correction;
 do not hide them with resource-specific validation or mark the affected obligation complete.
 
+Follow the target library's request-construction conventions for provider-specific parsing.
+Keep parsing in one request preparation function. Existing lifecycle preflight hooks may invoke
+that same conversion before mutation or replacement deletion.
+Do not duplicate native predicates or propose SDK features for each provider-specific validator.
+Keep actual engine enforcement bugs distinct from parser vocabulary.
+
 Read these target repository files before audit:
 
 1. .agents/skills/unobin-terraform-port/references/transfer-model.md

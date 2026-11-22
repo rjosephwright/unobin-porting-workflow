@@ -1,10 +1,16 @@
 # Native Unobin input constraints
 
-Declare input validity once through native Unobin constraints. Do not copy source validators into
-parallel `validate()` methods, `ResourceDefinition.Validate` callbacks, or validation predicates in
-equality/replacement functions. The engine must enforce constraints when their inputs become known.
-Conversion failures, saved identity and UID checks, API errors, and lifecycle preconditions remain
-operation checks; they do not justify duplicate definitions of input validity.
+Declare supported input rules once through native Unobin constraints. The engine must enforce them
+when their inputs become known. Keep the declarations as the sole definition of those rules across
+validation, equality, and replacement.
+Conversion failures, persisted identity checks, API errors, and lifecycle preconditions belong in
+the operation that needs them.
+
+Use the target library's request-construction conventions for provider-specific parsing. Keep each
+parser in one request preparation function. Existing lifecycle preflight hooks may call that function
+so conversion errors fail before mutation or replacement deletion. Keep native predicates in their
+declarations. Preserve the target's pinned SDK unless a version change is authorized. Report actual
+engine enforcement bugs separately from domain parsing and repair them within the authorized scope.
 
 ## Investigation and mapping
 
@@ -15,9 +21,10 @@ copying Terraform omission behavior. Do not preserve an omission workaround the 
 
 Read the pinned SDK vocabulary, source extraction, compiler checking, and plan/apply enforcement.
 Do not assume plan checks also run at apply. Inspect unchanged and deferred execution. For each
-rule, state its native declaration, enforcement stage, and executable acceptance condition. If the
-SDK cannot express a rule or enforce an execution path, identify that exact gap for the coordinator
-to correct in its owning layer. Do not disguise it with a callback or claim the obligation complete.
+rule supported by the pinned SDK, state its native declaration, enforcement stage, and executable
+acceptance condition. Map domain parsing to existing conversion paths before proposing any SDK
+extension. If the engine fails to enforce a declared constraint on an execution path, identify that
+exact bug for separate correction. Do not claim that enforcement passed when it did not.
 
 ## Declaration ownership
 
@@ -37,6 +44,16 @@ does not wrap long Go calls. Auditors must flag added lines that exceed the targ
 Keep shared SDK and lifecycle corrections separate from resource commits. Refresh dependent
 worktrees onto the corrected dependency before final validation. Do not edit module-cache copies,
 bypass missing checks, or add machine-specific dependency replacements to a release.
+
+Keep SDK changes within the user-authorized scope. A constraint mapping gap does not itself
+authorize expanding the SDK or making the entire construct queue depend on new SDK features.
+Explain the exact proposed SDK behavior and compatibility impact when those changes need a user
+decision, and continue independent queue work.
+
+When correcting SDK behavior, update the affected public documentation and follow the SDK's release
+note conventions in the same commit. Run the complete SDK test suite before committing, including
+any generated expectations and compatibility checks. When the user directs amendment, amend the
+affected commits, preserve unrelated work, and keep the history changes local.
 
 ## Executable proof
 
