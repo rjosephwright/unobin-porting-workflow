@@ -39,10 +39,19 @@ interactions of the correction; do not repeat an unchanged first-round source in
 
 ## Native input contract
 
-Apply `input-constraints.md` independently. Verify Go Constraints() is in the construct entry file,
-extracted through its real registration, and defines input validity once. Inspect pinned engine
-checks and actual literal/evaluated/pending/unchanged/saved-plan tests; callback rejection and CRUD
-success do not prove native enforcement. Missing declarations, duplicate validators, wrong method
-placement, and NoOp/deferred apply bypasses are findings. Check valid omissions and historical
-state destruction remain supported. Route incorrect source/target mapping to SPEC_GAP and missing
-implementation/runtime integration to PORT_GAP with exact affected paths and ownership.
+Check compiler tests and fixtures against the target's established layout. Flag compiler-only
+checks that bypass an existing compile-test suite. Keep runtime and lifecycle tests with the
+relevant construct or integration tests.
+
+Flag tests that only restate registration names, total counts or getters. Require actual input or
+runtime behavior; collection assertions must check contents rather than lengths alone. Compiled
+valid/invalid fixtures and executed native rules establish registration and schema behavior.
+
+Apply `input-constraints.md` independently. For Go, verify Constraints() is in the construct entry
+file. Verify native declarations define input validity once and are extracted through production
+registration. Inspect pinned engine checks and tests for literal, evaluated, pending, unchanged,
+and saved-plan inputs. Require tests that exercise native enforcement. Flag missing declarations,
+duplicate validators, wrong method placement, and NoOp or deferred apply bypasses. Check valid
+omissions and destruction of historical state. Route incorrect source-to-target mappings to
+SPEC_GAP and missing implementation or runtime integration to PORT_GAP. Include the affected
+paths and their owners.

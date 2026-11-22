@@ -63,7 +63,9 @@ affected commits, preserve unrelated work, and keep the history changes local.
 
 ## Executable proof
 
-Use package-local `testdata/ub/` fixtures, never inline Unobin in Go tests or tests of instruction text.
+Keep source programs in fixture files and follow the target's fixture layout. For Go targets
+without an established layout, use package-local `testdata/` and put Unobin programs under
+`testdata/ub/`. Test behavior through those fixtures.
 
 Always run `unobin fmt --wrap-strings` on all target-owned `.ub` files, including fixtures and
 integration factories/configurations. Use the installed or target-built Unobin formatter, rather
@@ -74,9 +76,16 @@ commits. Separate mixed fixture formatting from semantic edits before staging.
 Inspect the result before tests and completion. Preserve deliberate
 syntax-error fixtures when the formatter rejects them and report the exact exception.
 
-Put tests in the target's existing suite by behavior. Reuse its compile-test package and fixture
-layout for compiler checks; do not invent a separate constraints-test suite. Keep runtime/lifecycle
-tests with their existing resource or integration tests. Reuse the target test helpers.
+Put tests in the target's existing suites by behavior. Use its compile-test suite for compiler
+checks when one exists. Keep runtime and lifecycle tests with the relevant construct or integration
+tests, and reuse the target's test helpers.
+
+Test user inputs and runtime behavior. Do not test literal library names, total registration counts,
+registration getters, or inventories copied from the implementation. Prove exports and schemas with
+actual compiled valid/invalid inputs, and native extraction with rules that execute. Collection
+assertions must compare contents, such as complete requests, patches, outputs or call sequences;
+length-only assertions do not establish behavior. Do not replace a registration count with an exact
+registration-key list that restates the same implementation.
 
 - Compile actual valid/invalid literals through public registration and check evaluated inputs.
 - Identify the enforcing command; configuration-only `validate` may not evaluate resource arguments.

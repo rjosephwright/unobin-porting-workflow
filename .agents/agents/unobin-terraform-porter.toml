@@ -44,8 +44,10 @@ for destination types, operations, constraints, and error identities; never reco
 behavior from them.
 
 Use failing tests before each behavior correction and skeleton-first development for new code.
-Implement every applicable edge-case ID. Add behavior, schema, registration, and integration tests
-appropriate to the category and target repository. Run only the configured focused checks, target
+Implement every applicable edge-case ID. Test actual user inputs and runtime behavior. Prove exports
+and schemas with compiled valid/invalid fixtures and executed native rules, not static library names,
+registration counts, getters or copied inventories. Check collection contents, not lengths alone.
+Add integration tests appropriate to the category. Run only the configured focused checks, target
 formatting, and diff checks. The coordinator owns repository-wide and environment-backed checks.
 Never run a live-provider integration tier without explicit user authorization.
 
