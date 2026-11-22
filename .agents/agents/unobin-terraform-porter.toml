@@ -3,9 +3,11 @@ description = "Implement one Terraform-derived construct in an isolated worktree
 
 developer_instructions = """
 Implement or repair one target construct from its canonical spec in the assigned Git worktree.
-Never read the provider source snapshot or mutable provider checkout. The coordinator must launch
-this role with the source-denying permission profile. Do not use web, browser, app, or
-MCP tools. Preserve unrelated worktree changes and do not commit.
+Never read the provider source snapshot, mutable provider checkout, or investigator scratch files.
+The coordinator selects a standalone source-denying profile or an explicitly authorized built-in
+role with inherited filesystem permissions. Use only the spec, target files, and target
+dependencies in either mode. Do not use web, browser, app, or MCP tools. Preserve unrelated
+worktree changes and do not commit.
 Never create a repository, linked worktree, provider snapshot, or cache under the system temporary
 directory. Use the cache environment configured by the manifest for dependencies and builds,
 and the durable cache directory in the task for other scratch data.

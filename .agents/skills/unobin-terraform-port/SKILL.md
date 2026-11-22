@@ -34,7 +34,8 @@ those updates; they are not queue state by themselves.
 
 Read these files before dispatching work:
 
-- `.codex/terraform-port.toml`
+- The target manifest (defaults to `.codex/terraform-port.toml`) and repository porting guidance,
+  including `.agents/repository-porting-guidance.md` when present
 - `references/transfer-model.md`
 - `references/spec-contract.md`
 - `references/evidence-contract.md`
@@ -100,12 +101,18 @@ revision, even when the source checkout changes during a long queue.
 
 ## Dispatch from ledger state
 
-Ordinary Codex sub-agents inherit the parent's permissions. Custom role files do not create
-separate filesystem restrictions. Use fresh sessions through `scripts/run_agent.py`, which selects
-the analysis or porter permission profile explicitly and includes the role instructions. Do not
-substitute an ordinary spawned agent that can read provider source.
+Follow the session mode authorized by the user or target repository guidance. If that guidance
+chooses the built-in roles and all three are available, use `collaboration.spawn_agent` with the
+exact `agent_type` above and `fork_turns: "none"`. Pass the role task directly and use the returned
+agent name as the owner. A fresh role inherits the coordinator's filesystem permissions. In this
+mode, say so and instruct the porter to read only the specification, target, and target dependencies.
+Pass the assigned worktree as the porter’s required working directory for edits and commands.
+Apply the manifest's cache environment to role commands. Start with the configured built-in mode
+without probing the standalone launcher or requesting approval again.
 
-Prepare each task as a text file under the role's cache directory, then run, for example:
+When filesystem isolation is required or the target has no authorized built-in mode, use
+`scripts/run_agent.py` to start fresh sessions under the analysis or porter permission profile.
+Prepare each task as a text file under the role's cache directory:
 
 ```sh
 python3 .agents/skills/unobin-terraform-port/scripts/run_agent.py \
@@ -116,12 +123,11 @@ Use the target root as the working directory for investigation and audit. Use th
 worktree for implementation. Pass `--model` when the session must use the coordinator's explicitly
 selected model; otherwise it uses the local Codex configuration. No role fixes a model or effort.
 
-Before implementation, verify in the selected permission environment that the canonical spec and
-target dependencies are readable, the assigned worktree is writable, and representative files in
-the provider checkout, snapshots, source-bearing caches, and analysis scratch directories cannot
-be read. Check permission denial without printing file contents. Do not start the porter if this
-check fails or the host cannot enforce the required profile. Never include source excerpts in
-porter tasks, specifications, or correction messages. Send behavioral requirements and references.
+For standalone sessions, verify before implementation that the canonical spec and dependencies
+are readable, the assigned worktree is writable, and provider checkouts, snapshots, source-bearing
+caches, and analysis scratch deny reads. Test denial without printing file contents. Start the
+standalone porter only after these checks succeed. In either mode, send behavior and references in
+specifications and corrections. Keep provider source excerpts and access paths out of porter tasks.
 
 Ask the controller for the next useful work whenever an agent returns or a stage changes:
 
@@ -142,9 +148,9 @@ The controller enforces `max_porters` and prevents two implementations with the 
 blocked item does not prevent an unrelated implementation. Commits remain in queue order unless a
 blocked item is explicitly marked `deferred` with a reason.
 
-The controller returns actions; the coordinator launches each role with `scripts/run_agent.py`.
-Use the session identifier from its JSON event stream with `start`, then submit its final artifact
-with the matching `set-*` command. Keep concurrency within the manifest limit.
+The coordinator launches each action in the selected session mode. Use the built-in agent name or
+the standalone launcher's JSON session identifier with `start`, then submit the final artifact with
+the matching `set-*` command. Keep concurrency within the manifest limit.
 
 ## Investigate
 
@@ -197,9 +203,9 @@ Record the assignment with `start <key> porter <agent-id> --worktree <path>`. Gi
 - target repository instructions and configured focused checks; and
 - the prior audit for a correction.
 
-Do not include provider excerpts or the provider snapshot path. The separately selected porter
-permission profile must deny the snapshot and every other provider source copy. The porter must
-derive target APIs, naming, and test conventions from the target repository and its dependencies.
+Omit provider excerpts and the provider snapshot path. In standalone mode the porter profile must
+deny the snapshot and every other provider source copy. In either mode the porter must derive target
+APIs, naming, and test conventions from the target repository and its dependencies.
 
 For Go Unobin libraries, name construct entry files by category: `*_rsrc.go` for
 resources, `*_dsrc.go` for data sources, and `*_action.go` for actions. Matching

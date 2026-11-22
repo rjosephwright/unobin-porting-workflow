@@ -40,17 +40,23 @@ Investigator, porter, and auditor follow
 [the native input contract](skills/unobin-terraform-port/references/input-constraints.md).
 Input rules belong to native constraints in each construct entry file, without duplicate validation
 callbacks. Specs identify rule coverage and SDK gaps; compiled fixtures and plan/apply tests prove
-known, pending, unchanged and saved-plan enforcement. The target's `.agents/library-porting.md`
-contains provider-specific decisions, including required Kubernetes desired identity.
+known, pending, unchanged and saved-plan enforcement. Use the target repository's porting guidance
+for decisions specific to that library.
 
-## Permission isolation
+## Session modes
 
-Codex 0.169.0 applies a limited set of custom-role overrides. Approval and filesystem permissions
-remain inherited from the parent. Setting `default_permissions` in a role file does not isolate
-that role. See the [versioned role implementation](https://github.com/openai/codex/blob/rust-v0.169.0/codex-rs/core/src/agent/role.rs).
+Follow the target's porting guidance. Targets that authorize built-in roles can launch the three
+named roles through `collaboration.spawn_agent` with `fork_turns: "none"`. Use the returned agent
+name as the controller owner. These roles inherit the coordinator's filesystem permissions.
+Built-in mode uses fresh conversations, separate Git worktrees, the porter's instruction to use
+only the spec and target, and independent audit. A repository can set its choice in
+`.agents/repository-porting-guidance.md`.
 
-Use `skills/unobin-terraform-port/scripts/run_agent.py` for porting tasks. It starts a fresh
-`codex exec` process with role instructions and an explicit top-level permission selection:
+### Standalone sessions with separate filesystem permissions
+
+Use `skills/unobin-terraform-port/scripts/run_agent.py` when the workflow requires separate
+permission profiles or the target has no authorized built-in mode. It starts a fresh `codex exec`
+process with role instructions and an explicit permission selection:
 
 - `unobin-terraform-analysis`: target and snapshot reads, analysis scratch writes.
 - `unobin-terraform-port`: target and dependency reads, implementation worktree and cache writes,
@@ -90,7 +96,7 @@ codex --strict-config doctor --summary --no-color --ascii
 
 This diagnoses configuration; it does not prove a porter's filesystem isolation.
 
-## Run one role
+## Run one standalone role
 
 Prepare a task file with the inputs required by the role's contract. For a porter, include only the
 construct, specification, target and worktree paths, validation commands, and relevant audit
