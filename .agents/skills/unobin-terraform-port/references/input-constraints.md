@@ -28,6 +28,12 @@ exact bug for separate correction. Do not claim that enforcement passed when it 
 
 ## Declaration ownership
 
+Follow the target's pinned constraint API. Where it provides `IsMatch` and `IsFormat`, use
+`IsMatch` with a constant regex pattern and use the SDK's exported constants for `IsFormat`.
+Examples in Go include `constraint.FormatRegex`, `constraint.FormatIP`, `constraint.FormatCIDR`,
+`constraint.FormatBase64`, and `constraint.FormatPositiveDuration`. Preserve existing rule and
+null semantics when changing declarations.
+
 For Go, the registered input type's `Constraints()` method belongs in its construct entry file:
 `*_rsrc.go`, `*_dsrc.go`, or `*_action.go`. Do not create separate `*_constraints.go` files. Verify
 extraction through production library registration. Methods on nested helper types and ordinary
