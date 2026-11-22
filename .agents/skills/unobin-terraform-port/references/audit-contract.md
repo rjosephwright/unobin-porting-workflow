@@ -33,7 +33,8 @@ Use `SPEC_GAP` when the source provider requires behavior absent from or incorre
 `PORT_GAP` when the spec is correct but target code or tests do not satisfy it. Severities are
 `critical`, `high`, `medium`, and `low`.
 
-A `PASS` audit has no findings and exactly `- None.` under remaining delta. `FAIL` and `BLOCKED`
+For a `PASS` audit, the Findings section must contain exactly `- None.`; omit the empty
+findings table. A `PASS` audit also has exactly `- None.` under remaining delta. `FAIL` and `BLOCKED`
 must state the remaining work. For later rounds, verify prior findings and inspect the immediate
 interactions of the correction; do not repeat an unchanged first-round source inventory.
 
